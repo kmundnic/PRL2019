@@ -1,4 +1,5 @@
 using JLD
+using MAT
 using Dates
 using Random
 
@@ -46,8 +47,8 @@ function main()
 
 	# Model parameters
 	params = Dict{Symbol,Real}()
-	α = 2:3  # Degrees of freedom of the t-Student
-	fraction = 5 * 10 .^range(-4, stop=-1, length=10)[1:2] # Fraction of total number of triplets to be used to calculate the embedding ∈ [0,1]
+	α = [2,10]  # Degrees of freedom of the t-Student
+	fraction = 5 * 10 .^range(-4, stop=-1, length=10)[1:8] # Fraction of total number of triplets to be used to calculate the embedding ∈ [0,1]
 	dimensions = 1 # dimensions of the embedding
 
 	# Probability parameters
@@ -100,9 +101,9 @@ function main()
 	README = string("Grid search μ = $(μ), α = $(α), fraction = $(fraction), repetitions = $repetitions using t-STE on ", 
 	            Dates.format(Dates.now(), "yyyy-mm-dd_HH.MM.SS"))
 
-    filename = string("./results/results_", split(basename(args["data"]), ".")[1], ".jld")
+    filename = string("./results/results_", split(basename(args["data"]), ".")[1], ".mat")
 	println(filename)
-	jldopen(filename, "w") do io
+	matopen(filename, "w") do io
 	    write(io, "mse", mse)
 	    write(io, "violations", violations)
 	    write(io, "README", README)
