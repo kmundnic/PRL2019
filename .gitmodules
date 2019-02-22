@@ -1,3 +1,6 @@
 [submodule "TripletEmbeddings.jl"]
 	path = TripletEmbeddings.jl
 	url = https://github.com/kmundnic/TripletEmbeddings.jl
+[submodule "figures/shadedErrorBar"]
+	path = figures/shadedErrorBar
+	url = https://github.com/raacampbell/shadedErrorBar.git
