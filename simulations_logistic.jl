@@ -64,6 +64,7 @@ function tSTE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{S
 
     for j in 1:length(α), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 		println("=========================")
+		println("tSTE")
 		println("α = $(α[j])")
 		println("fraction = $(experiment[:fraction][k]*100)%")
 		println("repetition = $l")
@@ -72,7 +73,7 @@ function tSTE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{S
 		S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 		params[:α] = α[j]
         te = Embeddings.tSTE(S, experiment[:dimensions], params)
-        @time violations[j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter])
+        @time violations[j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
         Y, mse[j,k,l] = Embeddings.scale(data, te; MSE=true)
 	end
@@ -92,7 +93,6 @@ function STE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 
     # μ_ijk^a in the paper are the probabilities of successfully annotating
     # triplets (i,j,k) by annotator a.
-    # μ_ijk = constant_success_probabilities(experiment[:μ][i], experiment[:σ], n)
     μ_ijk = logistic_success_probabilities(data)
 
     # Generate triplets
@@ -100,13 +100,14 @@ function STE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 
     for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 		println("=========================")
+		println("STE")
 		println("fraction = $(experiment[:fraction][k]*100)%")
 		println("repetition = $l")
 		println("=========================")
 
 		S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
         te = Embeddings.STE(S, experiment[:dimensions], params)
-        @time violations[k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter])
+        @time violations[k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
         Y, mse[k,l] = Embeddings.scale(data, te; MSE=true)
 	end
@@ -125,20 +126,21 @@ function GNMDS(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{
 
     # μ_ijk^a in the paper are the probabilities of successfully annotating
     # triplets (i,j,k) by annotator a.
-    μ_ijk = constant_success_probabilities(experiment[:μ][i], experiment[:σ], n)
+    μ_ijk = logistic_success_probabilities(data)
 
     # Generate triplets
     triplets = Embeddings.label(data, probability_success=μ_ijk)
 
     for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 		println("=========================")
+		println("GNMDS")
 		println("fraction = $(experiment[:fraction][k]*100)%")
 		println("repetition = $l")
 		println("=========================")
 
 		S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
         te = Embeddings.HingeGNMDS(S, experiment[:dimensions])
-        @time violations[k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter])
+        @time violations[k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
         Y, mse[k,l] = Embeddings.scale(data, te; MSE=true)
 	end
@@ -156,7 +158,7 @@ function save_data(args::Dict{String,Any}, kind::String, experiment::Dict{Symbol
 		println("Folder ", folder, " already exists")
 	end
 
-	README = string("Grid search μ = $(experiment[:μ]), fraction = $(experiment[:fraction]), repetitions = $(experiment[:repetitions]) using ", kind, " on ", 
+	README = string("Grid search: fraction = $(experiment[:fraction]), repetitions = $(experiment[:repetitions]) using ", kind, " on ", 
 	            Dates.format(Dates.now(), "yyyy-mm-dd_HH.MM.SS"))
 
     filename = string(folder, "results_", split(basename(args["data"]), ".")[1], ".mat")
@@ -183,13 +185,13 @@ function main()
 	data = Embeddings.load_data(path=args["data"])
 
 	Random.seed!(4)
-	# tSTE(args, data, experiment)
+	tSTE(args, data, experiment)
 
 	Random.seed!(4)
 	STE(args, data, experiment)
 
 	Random.seed!(4)
-	# GNMDS(args, data, experiment)
+	GNMDS(args, data, experiment)
 
 
 end
