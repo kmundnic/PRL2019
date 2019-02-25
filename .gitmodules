@@ -4,3 +4,6 @@
 [submodule "figures/shadedErrorBar"]
 	path = figures/shadedErrorBar
 	url = https://github.com/kmundnic/shadedErrorBar.git
+[submodule "figures/matlab2tikz"]
+	path = figures/matlab2tikz
+	url = https://github.com/kmundnic/matlab2tikz.git
