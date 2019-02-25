@@ -1,22 +1,25 @@
-include("../../Embeddings/src/utilities.jl")
+include("../TripletEmbeddings.jl/src/Embeddings.jl")
 include("MTurk.jl")
 
 using MAT
 using CSV
 using Glob
 using Plots; pyplot()
+using Random
 using DataFrames
+using LinearAlgebra
 using DataStructures
 
-srand(10)
+Random.seed!(10)
 
-task = "TaskA"
+task = "TaskB"
 println("Checking annotations for ", task)
 
 file = string("../data/", task, ".csv")
-data = load_data(path=file)
+data = Embeddings.load_data(path=file)
 
-files = glob(string(task, "_output_*.csv"))
+files = glob(string("data/", task, "_output_*.csv"))
+@assert !isempty(files) "No files found. Check path!"
 
 # Read all files at once and concatenate the results into a single DataFrame
 mturk = vcat(CSV.read.(files)...)
@@ -46,7 +49,7 @@ results = DataFrame(workerID = collect(keys(optionA)),
 		  		violations = collect(values(no_violations)),
 		  		total = collect(values(hits)))
 
-mturk[:correct_answers] = Array{String,1}(size(mturk,1))
+mturk[:correct_answers] = Array{String}(undef, size(mturk,1))
 queries = MTurk.job_queries(mturk)
 
 d_ij = norm.(data[queries[:,1]] - data[queries[:,2]])
@@ -62,7 +65,8 @@ for q in 1:size(queries,1)
 	end
 end
 
-results[:fraction_correct] = 1 - results[:violations]./results[:total]
+results[:fraction_correct] = zeros(Float64, size(results,1))
+results[:fraction_correct] = 1 .- results[:violations]./results[:total]
 
 ### Analysis of errors
 # This is done by
@@ -81,13 +85,14 @@ plot()
 for a in eachindex(annotators)
 	job = mturk[mturk[:,:WorkerId] .== annotators[a], :] # First annotator
 
-	d[a,:], μ[a,:] = MTurk.success_function(job, data, bins)
+	d[a,:], μ[a,:] = MTurk.success_function(job, data; number_of_bins=bins)
 
 	plot!(d[a,:], μ[a,:],
 		xlabel="d_ik - d_ij",
 		ylabel="Probability of success", 
 		show=true)
 end
+plot!(mean(d, dims=1)', mean(μ, dims=1)')
 
 # filename = string(task, "_annotators", ".mat")
 # file = matopen(filename, "w")

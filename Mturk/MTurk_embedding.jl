@@ -4,14 +4,16 @@ include("MTurk.jl")
 using MAT
 using CSV
 using Glob
-using Plots; gr()
+using Plots; pyplot()
 using Printf
 using Interpolations
 
-task = "TaskA"
+task = "TaskB"
 println("Computing embedding for ", task, " from MTurk annotations")
 
-files = glob(string(task, "_output*.csv"))
+files = glob(string("data/", task, "_output*.csv"))
+@assert !isempty(files)
+
 mturk = vcat(CSV.read.(files)...)
 
 queries = MTurk.job_queries(mturk)
@@ -26,15 +28,15 @@ params[:μ] = 20
 
 no_triplets = floor(Int64, size(triplets,1)/4)
 # te = Embeddings.tSTE(triplets[1:no_triplets,:], dimensions, params)
-# te = Embeddings.STE(triplets[1:no_triplets,:], dimensions, params)
+te = Embeddings.STE(triplets[1:no_triplets,:], dimensions, params)
 # te = Embeddings.HingeGNMDS(triplets[1:no_triplets,:], dimensions)
-te = Embeddings.CKL(triplets[1:no_triplets,:], dimensions, params)
+# te = Embeddings.CKL(triplets[1:no_triplets,:], dimensions, params)
 
 @time violations = Embeddings.compute(te; max_iter=1000)
 
 data = Embeddings.load_data(path=string("../data/", task, ".csv"))
 
-Y, mse = Embeddings.scale(data, dropdims(Embeddings.X(te), dims=2), MSE=true)
+Y, mseY = Embeddings.scale(data, dropdims(Embeddings.X(te), dims=2), MSE=true)
 
 # We need to shift 0.5[s] due to how ffmpeg samples the video
 xs = 1:size(Embeddings.X(te), 1)
@@ -49,14 +51,15 @@ for x in xs
 	end
 end
 
-_, mse = Embeddings.scale(data, Z, MSE=true)
+_, mseZ = Embeddings.scale(data, Z, MSE=true)
 
 println("MSE = $mse")
 @printf("Violations = %.2f %%\n", 100*violations)
 
 plot(data, label="Data", color=:black)
 plot!(Z, label="MTurk", color=:blue)
-plot!(1.5:1:(size(Y,1)+1), Y, label="MTurk shifted", color=:green)
+plot!(Y, label="MTurk shifted", color=:green)
+# plot!(1.5:1:(size(Y,1)+1), Y, label="MTurk shifted", color=:green)
 
 
 # filename = string(task, "_", string(no_triplets),  "_.mat")

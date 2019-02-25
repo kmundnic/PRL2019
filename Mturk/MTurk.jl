@@ -2,7 +2,9 @@ module MTurk
 
 	include("../TripletEmbeddings.jl/src/Embeddings.jl")
 
+	using Statistics
 	using DataFrames
+	using LinearAlgebra
 
 	function hits_per_worker(workers::Array{String,1})
 	
@@ -118,7 +120,7 @@ module MTurk
 		return optionA, totalA, optionB, totalB, optionC, totalC
 	end
 
-	function success_function(job::DataFrame, data::Array{Float64,1}, number_of_bins::Int64 = 10)
+	function success_function(job::DataFrame, data::Array{Float64,1}; number_of_bins::Int64 = 10)
 		job[Symbol("d_ik - d_ij")] = zeros(size(job,1))
 		queries = MTurk.job_queries(job)
 
@@ -137,7 +139,7 @@ module MTurk
 		end
 
 		job = sort(job, Symbol("d_ik - d_ij"))
-		bins = linspace(1, size(job,1), number_of_bins)
+		bins = range(1, stop=size(job,1), length=number_of_bins)
 
 		μ = zeros(size(bins, 1) - 1) # Probability of success
 		distance = zeros(size(bins, 1) - 1) # Mean distance for bin
