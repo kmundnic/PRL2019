@@ -149,6 +149,43 @@ function GNMDS(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{
 
 end
 
+function CKL(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Symbol,Any})
+	# tSTE parameter
+	params = Dict{Symbol,Real}()
+	μ = [2,10]  # Degrees of freedom of the t-Student
+	n = size(data,1)
+
+	# Initialize some variables
+	mse        = zeros(Float64, length(μ), length(experiment[:fraction]), experiment[:repetitions])
+	violations = zeros(Float64, length(μ), length(experiment[:fraction]), experiment[:repetitions])
+
+	
+    # μ_ijk^a in the paper are the probabilities of successfully annotating
+    # triplets (i,j,k) by annotator a.
+    μ_ijk = logistic_success_probabilities(data)
+
+    # Generate triplets
+    triplets = Embeddings.label(data, probability_success=μ_ijk)
+
+    for j in 1:length(μ), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
+		println("=========================")
+		println("CKL")
+		println("μ = $(μ[j])")
+		println("fraction = $(experiment[:fraction][k]*100)%")
+		println("repetition = $l")
+		println("=========================")
+
+		S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+		params[:μ] = μ[j]
+        te = Embeddings.CKL(S, experiment[:dimensions], params)
+        @time violations[j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+
+        Y, mse[j,k,l] = Embeddings.scale(data, te; MSE=true)
+	end
+
+	save_data(args, "CKL", experiment, mse, violations)
+end
+
 function save_data(args::Dict{String,Any}, kind::String, experiment::Dict{Symbol,Any}, mse::Array{Float64}, violations::Array{Float64})
 	# For figure generation/exploration
 	folder = string("results/simulations_logistic/", kind, "/")
@@ -192,6 +229,9 @@ function main()
 
 	Random.seed!(4)
 	GNMDS(args, data, experiment)
+
+	Random.seed!(4)
+	CKL(args, data, experiment)
 
 
 end
