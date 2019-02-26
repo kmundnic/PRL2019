@@ -29,12 +29,13 @@ end
 
 data = Embeddings.load_data(path="./data/TaskA.csv")
 
-μ_ijk = logistic_success_probabilities(data)
+σ = 10
+μ_ijk = logistic_success_probabilities(data; σ=σ)
 job = MTurk.label_with_answers(data; probability_success=μ_ijk)
 train, test = MTurk.split(job, 0.1)
 
 deletecols!(test, Symbol("Answer.choice"))
-test[:predicted] = Array{String}(undef,size(test,1))
+test[Symbol("Answer.choice")] = Array{String}(undef,size(test,1))
 
 train[:violations] = zeros(Bool, size(train, 1))
 train[:violations] = train[:correct_answers] .!= train[Symbol("Answer.choice")]
@@ -44,7 +45,7 @@ params = Dict{Symbol,Real}()
 params[:σ] = 1/sqrt(2)
 te = Embeddings.STE(convert(Matrix{Int64}, train[:,[:i,:j,:k]]), dimensions, params)
 
-violations = Embeddings.compute(te; max_iter=50)
+train_violations = Embeddings.compute(te; max_iter=50)
 
 d, μ = MTurk.success_function(job, data)
 plot(d, μ, label="Empirical (triplet) errors")
@@ -58,8 +59,21 @@ for t in 1:size(test,1)
 	k = test[Symbol("Input.B")][t]
 
 	if D[i,j] < D[i,k]
-		test[:predicted][t] = "optionA"
+		test[Symbol("Answer.choice")][t] = "optionA"
 	else
-		test[:predicted][t] = "optionB"
+		test[Symbol("Answer.choice")][t] = "optionB"
 	end
 end
+
+test_violations = sum(test[:correct_answers] .!= test[Symbol("Answer.choice")])/size(test,1)
+@show test_violations
+
+bins = 100
+d_train, μ_train = MTurk.success_function(train, data; number_of_bins=bins)
+d_test_data, μ_test_data = MTurk.success_function(test, data; number_of_bins=bins)
+d_test_embedding, μ_test_embedding = MTurk.success_function(test, data; number_of_bins=bins)
+
+plot(d_train, logistic.(d_train; σ=σ), label="True f")
+plot!(d_train, μ_train, label="Estimated f from train triplets and data")
+plot!(d_test_data, μ_test_data, label="Estimated f from test triplets and data")
+
