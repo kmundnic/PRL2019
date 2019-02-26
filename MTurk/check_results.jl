@@ -4,8 +4,9 @@ include("MTurk.jl")
 using MAT
 using CSV
 using Glob
-using Plots; pyplot()
+using Plots; gr()
 using Random
+using Statistics
 using DataFrames
 using LinearAlgebra
 using DataStructures
