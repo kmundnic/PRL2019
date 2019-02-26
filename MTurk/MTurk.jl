@@ -2,6 +2,7 @@ module MTurk
 
 	include("../TripletEmbeddings.jl/src/Embeddings.jl")
 
+	using Random
 	using Statistics
 	using DataFrames
 	using LinearAlgebra
@@ -22,9 +23,13 @@ module MTurk
 		optionA = job[Symbol("Input.A")]
 		optionB = job[Symbol("Input.B")]
 
-		reference = [parse(Int64, split(job[Symbol("Input.Reference")][i], ".")[1]) for i in 1:size(job,1)]
-		optionA = [parse(Int64, split(job[Symbol("Input.A")][i], ".")[1]) for i in 1:size(job,1)]
-		optionB = [parse(Int64, split(job[Symbol("Input.B")][i], ".")[1]) for i in 1:size(job,1)]
+		try
+			reference = [parse(Int64, split(job[Symbol("Input.Reference")][i], ".")[1]) for i in 1:size(job,1)]
+			optionA = [parse(Int64, split(job[Symbol("Input.A")][i], ".")[1]) for i in 1:size(job,1)]
+			optionB = [parse(Int64, split(job[Symbol("Input.B")][i], ".")[1]) for i in 1:size(job,1)]
+		catch MethodError
+			# If we encounter a method error, it's because the values are Int64
+		end
 
 		return [reference optionA optionB]
 	end
@@ -153,6 +158,70 @@ module MTurk
 		end
 
 		return distance, μ
+	end
+
+	function label_with_answers(data::Array{Float64,1}; probability_success::Array{Float64,3}=ones(size(data,1),size(data,1),size(data,1)))::DataFrame
+	    return label_with_answers(reshape(data, size(data,1), 1), probability_success=probability_success)
+	end
+
+	function label_with_answers(data::Array{Float64,2}; probability_success::Array{Float64,3}=ones(size(data,1),size(data,1),size(data,1)))::DataFrame
+	    # probability represents the probability of swapping the order of a
+	    # random triplet
+
+	    # We prealocate the possible total amount of triplets. Before returning,
+	    # we clip the array 'triplets' to the amount of nonzero elements.
+	    n = size(data,1)
+	    triplets = zeros(Int64, n*binomial(n-1, 2), 3)
+	    options = zeros(Int64, n*binomial(n-1, 2), 3)
+	    correct = Array{String}(undef, n*binomial(n-1, 2))
+	    answered = Array{String}(undef, n*binomial(n-1, 2))
+	    counter = 0
+
+	    D = Embeddings.distances(data, size(data,1))
+
+	    for k = 1:n, j = 1:k-1, i = 1:n
+	        if i != j && i != k
+
+	            @inbounds mistake = probability_success[i,j,k] .<= 1 - rand()
+
+	            if D[i,j] < D[i,k]
+	                counter +=1
+	                options[counter,:] = [i, j, k]
+	                correct[counter] = "optionA"
+	                if !mistake
+	                    answered[counter] = "optionA"
+	                    @inbounds triplets[counter,:] = [i, j, k]
+	                else
+	                    answered[counter] = "optionB"
+	                    @inbounds triplets[counter,:] = [i, k, j]
+	                end
+	            elseif D[i,j] > D[i,k]
+	                counter += 1
+	                options[counter,:] = [i, j, k]
+	                correct[counter] = "optionB"
+	                if !mistake
+	                    answered[counter] = "optionB"
+	                    @inbounds triplets[counter,:] = [i, k, j]
+	                else
+	                    answered[counter] = "optionA"
+	                    @inbounds triplets[counter,:] = [i, j, k]
+	                end
+	            end
+	        end
+	    end
+
+	    return DataFrame([triplets[1:counter,:] options[1:counter,:] correct[1:counter] answered[1:counter]], 
+	    	[:i, :j, :k, Symbol("Input.Reference"), Symbol("Input.A"), Symbol("Input.B"), :correct_answers, Symbol("Answer.choice")])
+	end
+
+	function split(job::DataFrame, fraction::Real)
+	    @assert !isempty(job)
+	    
+	    amount = floor(Int64, fraction * size(job,1))
+	    
+	    job = job[shuffle(1:end),:]
+	    return job[1:amount, :], job[amount+1:end, :]
+
 	end
 
 end
