@@ -77,3 +77,10 @@ plot(d_train, logistic.(d_train; σ=σ), label="True f")
 plot!(d_train, μ_train, label="Estimated f from train triplets and data")
 plot!(d_test_data, μ_test_data, label="Estimated f from test triplets and data")
 
+# d_train, μ_train = MTurk.success_function(train, dropdims(Embeddings.X(te), dims=2); number_of_bins=bins)
+# d_test_data, μ_test_data = MTurk.success_function(test, dropdims(Embeddings.X(te), dims=2); number_of_bins=bins)
+# d_test_embedding, μ_test_embedding = MTurk.success_function(test, dropdims(Embeddings.X(te), dims=2); number_of_bins=bins)
+
+# plot(d_train, logistic.(d_train; σ=σ), label="True f")
+# plot!(d_train, μ_train, label="Estimated f from train triplets and embedding")
+# plot!(d_test_data, μ_test_data, label="Estimated f from test triplets and embedding")
