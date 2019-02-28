@@ -51,31 +51,33 @@ function tSTE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{S
 	n = size(data,1)
 
 	# Initialize some variables
-	mse        = zeros(Float64, length(α), length(experiment[:fraction]), experiment[:repetitions])
-	violations = zeros(Float64, length(α), length(experiment[:fraction]), experiment[:repetitions])
+	mse        = zeros(Float64, length(experiment[:σ]), length(α), length(experiment[:fraction]), experiment[:repetitions])
+	violations = zeros(Float64, length(experiment[:σ]), length(α), length(experiment[:fraction]), experiment[:repetitions])
 
-	
-    # μ_ijk^a in the paper are the probabilities of successfully annotating
-    # triplets (i,j,k) by annotator a.
-    μ_ijk = logistic_success_probabilities(data)
+	for i in eachindex(experiment[:σ])
+	    # μ_ijk^a in the paper are the probabilities of successfully annotating
+	    # triplets (i,j,k) by annotator a.
+	    μ_ijk = logistic_success_probabilities(data; σ=experiment[:σ][i])
 
-    # Generate triplets
-    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    # Generate triplets
+	    triplets = Embeddings.label(data, probability_success=μ_ijk)
 
-    for j in 1:length(α), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
-		println("=========================")
-		println("tSTE")
-		println("α = $(α[j])")
-		println("fraction = $(experiment[:fraction][k]*100)%")
-		println("repetition = $l")
-		println("=========================")
+	    for j in 1:length(α), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
+			println("=========================")
+			println("tSTE")
+			println("α = $(α[j])")
+			println("fraction = $(experiment[:fraction][k]*100)%")
+			println("repetition = $l")
+			println("σ = $(experiment[:σ][i])")
+			println("=========================")
 
-		S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
-		params[:α] = α[j]
-        te = Embeddings.tSTE(S, experiment[:dimensions], params)
-        @time violations[j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+			params[:α] = α[j]
+	        te = Embeddings.tSTE(S, experiment[:dimensions], params)
+	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
-        Y, mse[j,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,j,k,l] = Embeddings.scale(data, te; MSE=true)
+		end
 	end
 
 	save_data(args, "tSTE", experiment, mse, violations)
@@ -88,28 +90,31 @@ function STE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 	n = size(data, 1)
 
 	# Initialize some variables
-	mse        = zeros(Float64, length(experiment[:fraction]), experiment[:repetitions])
-	violations = zeros(Float64, length(experiment[:fraction]), experiment[:repetitions])
+	mse        = zeros(Float64, length(experiment[:σ]), length(experiment[:fraction]), experiment[:repetitions])
+	violations = zeros(Float64, length(experiment[:σ]), length(experiment[:fraction]), experiment[:repetitions])
 
-    # μ_ijk^a in the paper are the probabilities of successfully annotating
-    # triplets (i,j,k) by annotator a.
-    μ_ijk = logistic_success_probabilities(data)
+	for i in eachindex(experiment[:σ])
+	    # μ_ijk^a in the paper are the probabilities of successfully annotating
+	    # triplets (i,j,k) by annotator a.
+	    μ_ijk = logistic_success_probabilities(data; σ=experiment[:σ][i])
 
-    # Generate triplets
-    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    # Generate triplets
+	    triplets = Embeddings.label(data, probability_success=μ_ijk)
 
-    for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
-		println("=========================")
-		println("STE")
-		println("fraction = $(experiment[:fraction][k]*100)%")
-		println("repetition = $l")
-		println("=========================")
+	    for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
+			println("=========================")
+			println("STE")
+			println("fraction = $(experiment[:fraction][k]*100)%")
+			println("repetition = $l")
+			println("σ = $(experiment[:σ][i])")
+			println("=========================")
 
-		S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
-        te = Embeddings.STE(S, experiment[:dimensions], params)
-        @time violations[k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+	        te = Embeddings.STE(S, experiment[:dimensions], params)
+	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
-        Y, mse[k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,k,l] = Embeddings.scale(data, te; MSE=true)
+		end
 	end
 
 	save_data(args, "STE", experiment, mse, violations)
@@ -120,29 +125,31 @@ function GNMDS(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{
 	n = size(data,1)
 
 	# Initialize some variables
-	mse        = zeros(Float64, length(experiment[:fraction]), experiment[:repetitions])
-	violations = zeros(Float64, length(experiment[:fraction]), experiment[:repetitions])
+	mse        = zeros(Float64, length(experiment[:σ]), length(experiment[:fraction]), experiment[:repetitions])
+	violations = zeros(Float64, length(experiment[:σ]), length(experiment[:fraction]), experiment[:repetitions])
 
+	for i in eachindex(experiment[:σ])
+	    # μ_ijk^a in the paper are the probabilities of successfully annotating
+	    # triplets (i,j,k) by annotator a.
+	    μ_ijk = logistic_success_probabilities(data; σ=experiment[:σ][i])
 
-    # μ_ijk^a in the paper are the probabilities of successfully annotating
-    # triplets (i,j,k) by annotator a.
-    μ_ijk = logistic_success_probabilities(data)
+	    # Generate triplets
+	    triplets = Embeddings.label(data, probability_success=μ_ijk)
 
-    # Generate triplets
-    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
+			println("=========================")
+			println("GNMDS")
+			println("fraction = $(experiment[:fraction][k]*100)%")
+			println("repetition = $l")
+			println("σ = $(experiment[:σ][i])")
+			println("=========================")
 
-    for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
-		println("=========================")
-		println("GNMDS")
-		println("fraction = $(experiment[:fraction][k]*100)%")
-		println("repetition = $l")
-		println("=========================")
+			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+	        te = Embeddings.HingeGNMDS(S, experiment[:dimensions])
+	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
-		S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
-        te = Embeddings.HingeGNMDS(S, experiment[:dimensions])
-        @time violations[k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
-
-        Y, mse[k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,k,l] = Embeddings.scale(data, te; MSE=true)
+		end
 	end
 
 	save_data(args, "GNMDS", experiment, mse, violations)
@@ -156,31 +163,33 @@ function CKL(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 	n = size(data,1)
 
 	# Initialize some variables
-	mse        = zeros(Float64, length(μ), length(experiment[:fraction]), experiment[:repetitions])
-	violations = zeros(Float64, length(μ), length(experiment[:fraction]), experiment[:repetitions])
+	mse        = zeros(Float64, length(experiment[:σ]), length(μ), length(experiment[:fraction]), experiment[:repetitions])
+	violations = zeros(Float64, length(experiment[:σ]), length(μ), length(experiment[:fraction]), experiment[:repetitions])
 
-	
-    # μ_ijk^a in the paper are the probabilities of successfully annotating
-    # triplets (i,j,k) by annotator a.
-    μ_ijk = logistic_success_probabilities(data)
+	for i in eachindex(experiment[:σ])
+	    # μ_ijk^a in the paper are the probabilities of successfully annotating
+	    # triplets (i,j,k) by annotator a.
+	    μ_ijk = logistic_success_probabilities(data; σ=experiment[:σ][i])
 
-    # Generate triplets
-    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    # Generate triplets
+	    triplets = Embeddings.label(data, probability_success=μ_ijk)
 
-    for j in 1:length(μ), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
-		println("=========================")
-		println("CKL")
-		println("μ = $(μ[j])")
-		println("fraction = $(experiment[:fraction][k]*100)%")
-		println("repetition = $l")
-		println("=========================")
+	    for j in 1:length(μ), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
+			println("=========================")
+			println("CKL")
+			println("μ = $(μ[j])")
+			println("fraction = $(experiment[:fraction][k]*100)%")
+			println("repetition = $l")
+			println("σ = $(experiment[:σ][i])")
+			println("=========================")
 
-		S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
-		params[:μ] = μ[j]
-        te = Embeddings.CKL(S, experiment[:dimensions], params)
-        @time violations[j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+			params[:μ] = μ[j]
+	        te = Embeddings.CKL(S, experiment[:dimensions], params)
+	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
-        Y, mse[j,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,j,k,l] = Embeddings.scale(data, te; MSE=true)
+		end
 	end
 
 	save_data(args, "CKL", experiment, mse, violations)
@@ -218,11 +227,12 @@ function main()
 	experiment[:fraction] = 5 * 10 .^range(-4, stop=-1, length=10)[1:8] # Fraction of total number of triplets to be used to calculate the embedding ∈ [0,1]
 	experiment[:repetitions] = 30
 	experiment[:max_iter] = 1000
+	experiment[:σ] = [2,6,20]
 
 	data = Embeddings.load_data(path=args["data"])
 
-	Random.seed!(4)
-	tSTE(args, data, experiment)
+	# Random.seed!(4)
+	# tSTE(args, data, experiment)
 
 	Random.seed!(4)
 	STE(args, data, experiment)
