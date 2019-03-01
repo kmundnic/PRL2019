@@ -24,7 +24,7 @@ end
 
 function mock_args() # For debugging
 	args = Dict{String,Any}()
-	args["data"] = "./data/TaskA.csv"
+	args["data"] = "./data/TaskB.csv"
 
 	return args
 end
@@ -231,8 +231,8 @@ function main()
 
 	data = Embeddings.load_data(path=args["data"])
 
-	# Random.seed!(4)
-	# tSTE(args, data, experiment)
+	Random.seed!(4)
+	tSTE(args, data, experiment)
 
 	Random.seed!(4)
 	STE(args, data, experiment)

@@ -24,7 +24,7 @@ end
 
 function mock_args() # For debugging
 	args = Dict{String,Any}()
-	args["data"] = "./data/TaskA.csv"
+	args["data"] = "./data/TaskB.csv"
 
 	return args
 end
@@ -66,7 +66,7 @@ function tSTE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{S
 			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 			params[:α] = α[j]
 	        te = Embeddings.tSTE(S, experiment[:dimensions], params)
-	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter])
+	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
 	        Y, mse[i,j,k,l] = Embeddings.scale(data, te; MSE=true)
 		end
@@ -102,7 +102,7 @@ function STE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 
 			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 	        te = Embeddings.STE(S, experiment[:dimensions], params)
-	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter])
+	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
 	        Y, mse[i,k,l] = Embeddings.scale(data, te; MSE=true)
 		end
@@ -136,7 +136,7 @@ function GNMDS(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{
 
 			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 	        te = Embeddings.HingeGNMDS(S, experiment[:dimensions])
-	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter])
+	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
 	        Y, mse[i,k,l] = Embeddings.scale(data, te; MSE=true)
 		end
@@ -175,7 +175,7 @@ function CKL(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 			params[:μ] = μ[j]
 	        te = Embeddings.CKL(S, experiment[:dimensions], params)
-	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter])
+	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
 
 	        Y, mse[i,j,k,l] = Embeddings.scale(data, te; MSE=true)
 		end
@@ -221,8 +221,8 @@ function main()
 
 	data = Embeddings.load_data(path=args["data"])
 
-	Random.seed!(4)
-	tSTE(args, data, experiment)
+	#Random.seed!(4)
+	#tSTE(args, data, experiment)
 
 	Random.seed!(4)
 	STE(args, data, experiment)
