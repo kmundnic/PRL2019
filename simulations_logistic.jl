@@ -231,8 +231,8 @@ function main()
 
 	data = Embeddings.load_data(path=args["data"])
 
-	Random.seed!(4)
-	tSTE(args, data, experiment)
+	#Random.seed!(4)
+	#tSTE(args, data, experiment)
 
 	#Random.seed!(4)
 	#STE(args, data, experiment)
