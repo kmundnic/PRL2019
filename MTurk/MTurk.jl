@@ -6,6 +6,7 @@ module MTurk
 	using Statistics
 	using DataFrames
 	using LinearAlgebra
+	using Interpolations
 
 	function hits_per_worker(workers::Array{String,1})
 	
@@ -215,6 +216,25 @@ module MTurk
 	    job = job[shuffle(1:end),:]
 	    return job[1:amount, :], job[amount+1:end, :]
 
+	end
+
+	function shift(te::Main.Embeddings.TripletEmbedding, data::Vector{Float64}; seconds::Float64=-0.5)
+		
+		xs = 1:size(te.X.X, 1)
+		A = [te.X.X[x] for x in xs]
+		interp_linear = LinearInterpolation(xs, A)
+
+		Z = deepcopy(te.X.X)
+
+		for x in xs
+			if 2 <= x <= size(te.X.X,1)
+				Z[x] = interp_linear(x - seconds)
+			end
+		end
+
+		_, mse = Embeddings.scale(data, dropdims(Z, dims=2), MSE=true)
+
+		return Z, mse
 	end
 
 end
