@@ -4,8 +4,9 @@ include("MTurk.jl")
 using MAT
 using CSV
 using Glob
-using Plots; pyplot()
+using Plots; gr()
 using Printf
+using Statistics
 
 task = "TaskB"
 println("Computing embedding for ", task, " from MTurk annotations")
