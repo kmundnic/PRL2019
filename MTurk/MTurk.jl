@@ -21,9 +21,19 @@ module MTurk
 
 	function job_queries(job::DataFrame)
 
-		reference = [parse(Int64, Base.split(job[Symbol("Input.Reference")][i], ".")[1]) for i in 1:size(job,1)]
-		optionA = [parse(Int64, Base.split(job[Symbol("Input.A")][i], ".")[1]) for i in 1:size(job,1)]
-		optionB = [parse(Int64, Base.split(job[Symbol("Input.B")][i], ".")[1]) for i in 1:size(job,1)]
+		reference = zeros(Int64, size(job,1))
+		optionA = zeros(Int64, size(job,1))
+		optionB = zeros(Int64, size(job,1))
+
+		try
+			reference = [parse(Int64, Base.split(job[Symbol("Input.Reference")][i], ".")[1]) for i in 1:size(job,1)]
+			optionA = [parse(Int64, Base.split(job[Symbol("Input.A")][i], ".")[1]) for i in 1:size(job,1)]
+			optionB = [parse(Int64, Base.split(job[Symbol("Input.B")][i], ".")[1]) for i in 1:size(job,1)]
+		catch MethodError
+			reference = job[Symbol("Input.Reference")]
+			optionA = job[Symbol("Input.A")]
+			optionB = job[Symbol("Input.B")]
+		end
 
 		return [reference optionA optionB]
 	end
