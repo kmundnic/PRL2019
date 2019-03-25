@@ -7,8 +7,8 @@ using DataFrames
 using Statistics
 using LinearAlgebra
 
-include("TripletEmbeddings.jl/src/Embeddings.jl")
-include("Mturk/MTurk.jl")
+include("../TripletEmbeddings.jl/src/Embeddings.jl")
+include("MTurk.jl")
 
 Random.seed!(4)
 
@@ -27,7 +27,7 @@ function logistic_success_probabilities(data::Array{Float64}; σ=20)
 	return probabilities
 end
 
-data = Embeddings.load_data(path="./data/TaskA.csv")
+data = Embeddings.load_data(path="../data/TaskA.csv")
 
 σ = 10
 μ_ijk = logistic_success_probabilities(data; σ=σ)
