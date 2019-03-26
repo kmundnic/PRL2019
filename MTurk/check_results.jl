@@ -14,7 +14,7 @@ using DataStructures
 Random.seed!(10)
 
 task = "TaskB"
-println("Checking annotations for ", task)
+printstyled("Checking annotations for ", task; color=:light_cyan)
 
 file = string("../data/", task, ".csv")
 data = Embeddings.load_data(path=file)
@@ -38,6 +38,7 @@ for worker in keys(hits)
 
 	optionA[worker] = count(x -> x .== "optionA", job[Symbol("Answer.choice")])
 	optionB[worker] = count(x -> x .== "optionB", job[Symbol("Answer.choice")])
+	# We did not give an optionC, where d_ij == d_ik
 
 	no_violations[worker] = MTurk.job_violations(job, data)
 
@@ -93,7 +94,7 @@ for a in eachindex(annotators)
 		ylabel="Probability of success", 
 		show=true)
 end
-plot!(mean(d, dims=1)', mean(μ, dims=1)')
+# plot!(mean(d, dims=1)', mean(μ, dims=1)')
 
 # filename = string(task, "_annotators", ".mat")
 # file = matopen(filename, "w")
