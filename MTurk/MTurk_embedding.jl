@@ -8,7 +8,7 @@ using Plots; gr()
 using Printf
 using Statistics
 
-task = "TaskB"
+task = "TaskA"
 println("Computing embedding for ", task, " from MTurk annotations")
 
 files = glob(string("data/", task, "_output*.csv"))
@@ -28,7 +28,6 @@ params[:μ] = 20
 
 # Compute the embedding with the triplets generated in MTurk
 no_triplets = floor(Int64, size(triplets,1)/2)
-println("Nº triplets = $no_triplets")
 te = Embeddings.STE(triplets[1:no_triplets,:], dimensions, params)
 @time violations = Embeddings.compute(te; max_iter=1000)
 
@@ -36,11 +35,12 @@ te = Embeddings.STE(triplets[1:no_triplets,:], dimensions, params)
 # We compute the correlation because it is scale-free
 data = Embeddings.load_data(path=string("../data/", task, ".csv"))
 te.X.X[:,1], mse = Embeddings.scale(data, dropdims(Embeddings.X(te), dims=2), MSE=true)
-ρ = cor(dropdims(te.X.X,dims=2), data)
+ρ = cor(dropdims(te.X.X, dims=2), data)
 
+println("Nº triplets = $no_triplets")
 println("MSE = $(mse/length(data))")
 println("Pearson ρ = $ρ")
-@printf("Violations = %.2f %%\n", 100*violations)
+@printf("Violations = %.2f%%\n", 100*violations)
 
 plot(data, label="Data", color=:black)
 plot!(te.X.X, label="MTurk", color=:blue)
