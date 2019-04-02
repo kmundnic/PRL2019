@@ -133,13 +133,15 @@ module MTurk
 		job[Symbol("d_ik - d_ij")] = zeros(size(job,1))
 		queries = MTurk.job_queries(job)
 
-		job[:violations] = job[Symbol("Answer.choice")] .== job[:correct_answers]
+		job[:violations] = job[Symbol("Answer.choice")] .!= job[:correct_answers]
 
 		for q in 1:size(queries,1)
 			i = queries[q,1]
 			j = queries[q,2]
 			k = queries[q,3]
 
+			# If true option is option C, then d_ij - d_ik = 0, and we don't need to compute it 
+			# because we already initialized the array with zeros :-) 
 			if job[:correct_answers][q] == "optionA"
 				job[Symbol("d_ik - d_ij")][q] = norm(data[i] - data[k]) - norm(data[i] - data[j])
 			elseif job[:correct_answers][q] == "optionB"
@@ -156,7 +158,7 @@ module MTurk
 		for i in eachindex(bins)
 			if i < size(bins, 1)
 				annotations = job[ceil(Int64, bins[i]):floor(Int64, bins[i] + step(bins)),:]
-				μ[i] = mean(annotations[:violations])
+				μ[i] = 1 - mean(annotations[:violations])
 				distance[i] = mean(annotations[Symbol("d_ik - d_ij")])
 			end
 		end
