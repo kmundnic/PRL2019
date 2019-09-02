@@ -2,8 +2,7 @@ using JLD
 using MAT
 using Dates
 using Random
-
-include("TripletEmbeddings.jl/src/Embeddings.jl")
+using TripletEmbeddings
 
 Random.seed!(4)
 
@@ -53,7 +52,7 @@ function tSTE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{S
 	    μ_ijk = success_probabilities(experiment[:μ][i], experiment[:σ], n)
 
 	    # Generate triplets
-	    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    triplets = TripletEmbeddings.label(data, probability_success=μ_ijk)
 
 	    for j in 1:length(α), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 			println("=========================")
@@ -63,12 +62,12 @@ function tSTE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{S
 			println("repetition = $l")
 			println("=========================")
 
-			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+			S = TripletEmbeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 			params[:α] = α[j]
-	        te = Embeddings.tSTE(S, experiment[:dimensions], params)
-	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+	        te = TripletEmbeddings.tSTE(S, experiment[:dimensions], params)
+	        @time violations[i,j,k,l] = TripletEmbeddings.fit!(te; max_iter=experiment[:max_iter], verbose=false)
 
-	        Y, mse[i,j,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,j,k,l] = TripletEmbeddings.scale(data, te; MSE=true)
 		end
 	end
 
@@ -91,7 +90,7 @@ function STE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 	    μ_ijk = success_probabilities(experiment[:μ][i], experiment[:σ], n)
 
 	    # Generate triplets
-	    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    triplets = TripletEmbeddings.label(data, probability_success=μ_ijk)
 
 	    for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 			println("=========================")
@@ -100,11 +99,11 @@ function STE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 			println("repetition = $l")
 			println("=========================")
 
-			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
-	        te = Embeddings.STE(S, experiment[:dimensions], params)
-	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+			S = TripletEmbeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+	        te = TripletEmbeddings.STE(S, experiment[:dimensions], params)
+	        @time violations[i,k,l] = TripletEmbeddings.fit!(te; max_iter=experiment[:max_iter], verbose=false)
 
-	        Y, mse[i,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,k,l] = TripletEmbeddings.scale(data, te; MSE=true)
 		end
 	end
 
@@ -125,7 +124,7 @@ function GNMDS(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{
 	    μ_ijk = success_probabilities(experiment[:μ][i], experiment[:σ], n)
 
 	    # Generate triplets
-	    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    triplets = TripletEmbeddings.label(data, probability_success=μ_ijk)
 
 	    for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 			println("=========================")
@@ -134,11 +133,11 @@ function GNMDS(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{
 			println("repetition = $l")
 			println("=========================")
 
-			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
-	        te = Embeddings.HingeGNMDS(S, experiment[:dimensions])
-	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+			S = TripletEmbeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+	        te = TripletEmbeddings.HingeGNMDS(S, experiment[:dimensions])
+	        @time violations[i,k,l] = TripletEmbeddings.fit!(te; max_iter=experiment[:max_iter], verbose=false)
 
-	        Y, mse[i,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,k,l] = TripletEmbeddings.scale(data, te; MSE=true)
 		end
 	end
 
@@ -162,7 +161,7 @@ function CKL(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 	    μ_ijk = success_probabilities(experiment[:μ][i], experiment[:σ], n)
 
 	    # Generate triplets
-	    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    triplets = TripletEmbeddings.label(data, probability_success=μ_ijk)
 
 	    for j in 1:length(μ), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 			println("=========================")
@@ -172,12 +171,12 @@ function CKL(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 			println("repetition = $l")
 			println("=========================")
 
-			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+			S = TripletEmbeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 			params[:μ] = μ[j]
-	        te = Embeddings.CKL(S, experiment[:dimensions], params)
-	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+	        te = TripletEmbeddings.CKL(S, experiment[:dimensions], params)
+	        @time violations[i,j,k,l] = TripletEmbeddings.fit!(te; max_iter=experiment[:max_iter], verbose=false)
 
-	        Y, mse[i,j,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,j,k,l] = TripletEmbeddings.scale(data, te; MSE=true)
 		end
 	end
 
@@ -219,10 +218,10 @@ function main()
 	experiment[:repetitions] = 30
 	experiment[:max_iter] = 1000
 
-	data = Embeddings.load_data(path=args["data"])
+	data = TripletEmbeddings.load_data(args["data"])
 
 	#Random.seed!(4)
-	#tSTE(args, data, experiment)
+	tSTE(args, data, experiment)
 
 	Random.seed!(4)
 	STE(args, data, experiment)

@@ -2,25 +2,24 @@ using JLD
 using MAT
 using Dates
 using Random
-
-include("TripletEmbeddings.jl/src/Embeddings.jl")
+using TripletEmbeddings
 
 Random.seed!(4)
 
 # using MAT # Need to replace for CSV or JSON format
 using ArgParse
 
-function parse_commandline()
-	s = ArgParseSettings()
-	@add_arg_table s begin
-	    "--data", "-d"
-	        help = "Path to data"
-	        arg_type = String
-	        required = true
-	end
+# function parse_commandline()
+# 	s = ArgParseSettings()
+# 	@add_arg_table s begin
+# 	    "--data", "-d"
+# 	        help = "Path to data"
+# 	        arg_type = String
+# 	        required = true
+# 	end
 
-    return parse_args(s)
-end
+#     return parse_args(s)
+# end
 
 function mock_args() # For debugging
 	args = Dict{String,Any}()
@@ -35,7 +34,7 @@ end
 
 function logistic_success_probabilities(data::Array{Float64}; σ=20)
 	n = size(data, 1)
-	D = Embeddings.distances(data, n)
+	D = TripletEmbeddings.distances(data, n)
 	probabilities = zeros(Float64, n, n, n)
 
 	for k = 1:n, j = 1:n, i = 1:n
@@ -60,7 +59,7 @@ function tSTE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{S
 	    μ_ijk = logistic_success_probabilities(data; σ=experiment[:σ][i])
 
 	    # Generate triplets
-	    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    triplets = TripletEmbeddings.label(data, probability_success=μ_ijk)
 
 	    for j in 1:length(α), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 			println("=========================")
@@ -71,12 +70,12 @@ function tSTE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{S
 			println("σ = $(experiment[:σ][i])")
 			println("=========================")
 
-			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+			S = TripletEmbeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 			params[:α] = α[j]
-	        te = Embeddings.tSTE(S, experiment[:dimensions], params)
-	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+	        te = TripletEmbeddings.tSTE(S, experiment[:dimensions], params)
+	        @time violations[i,j,k,l] = TripletEmbeddings.fit!(te; max_iter=experiment[:max_iter], verbose=false)
 
-	        Y, mse[i,j,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,j,k,l] = TripletEmbeddings.scale(data, te; MSE=true)
 		end
 	end
 
@@ -99,7 +98,7 @@ function STE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 	    μ_ijk = logistic_success_probabilities(data; σ=experiment[:σ][i])
 
 	    # Generate triplets
-	    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    triplets = TripletEmbeddings.label(data, probability_success=μ_ijk)
 
 	    for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 			println("=========================")
@@ -109,11 +108,11 @@ function STE(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 			println("σ = $(experiment[:σ][i])")
 			println("=========================")
 
-			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
-	        te = Embeddings.STE(S, experiment[:dimensions], params)
-	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+			S = TripletEmbeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+	        te = TripletEmbeddings.STE(S, experiment[:dimensions], params)
+	        @time violations[i,k,l] = TripletEmbeddings.fit!(te; max_iter=experiment[:max_iter], verbose=false)
 
-	        Y, mse[i,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,k,l] = TripletEmbeddings.scale(data, te; MSE=true)
 		end
 	end
 
@@ -134,7 +133,7 @@ function GNMDS(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{
 	    μ_ijk = logistic_success_probabilities(data; σ=experiment[:σ][i])
 
 	    # Generate triplets
-	    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    triplets = TripletEmbeddings.label(data, probability_success=μ_ijk)
 
 	    for k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 			println("=========================")
@@ -144,11 +143,11 @@ function GNMDS(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{
 			println("σ = $(experiment[:σ][i])")
 			println("=========================")
 
-			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
-	        te = Embeddings.HingeGNMDS(S, experiment[:dimensions])
-	        @time violations[i,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+			S = TripletEmbeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+	        te = TripletEmbeddings.HingeGNMDS(S, experiment[:dimensions])
+	        @time violations[i,k,l] = TripletEmbeddings.fit!(te; max_iter=experiment[:max_iter], verbose=false)
 
-	        Y, mse[i,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,k,l] = TripletEmbeddings.scale(data, te; MSE=true)
 		end
 	end
 
@@ -172,7 +171,7 @@ function CKL(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 	    μ_ijk = logistic_success_probabilities(data; σ=experiment[:σ][i])
 
 	    # Generate triplets
-	    triplets = Embeddings.label(data, probability_success=μ_ijk)
+	    triplets = TripletEmbeddings.label(data, probability_success=μ_ijk)
 
 	    for j in 1:length(μ), k in 1:length(experiment[:fraction]), l in 1:experiment[:repetitions]
 			println("=========================")
@@ -183,12 +182,12 @@ function CKL(args::Dict{String,Any}, data::Array{Float64,1}, experiment::Dict{Sy
 			println("σ = $(experiment[:σ][i])")
 			println("=========================")
 
-			S = Embeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
+			S = TripletEmbeddings.subset(triplets, experiment[:fraction][k]) # Random subset of triplets
 			params[:μ] = μ[j]
-	        te = Embeddings.CKL(S, experiment[:dimensions], params)
-	        @time violations[i,j,k,l] = Embeddings.compute(te; max_iter=experiment[:max_iter], verbose=false)
+	        te = TripletEmbeddings.CKL(S, experiment[:dimensions], params)
+	        @time violations[i,j,k,l] = TripletEmbeddings.fit!(te; max_iter=experiment[:max_iter], verbose=false)
 
-	        Y, mse[i,j,k,l] = Embeddings.scale(data, te; MSE=true)
+	        Y, mse[i,j,k,l] = TripletEmbeddings.scale(data, te; MSE=true)
 		end
 	end
 
@@ -229,19 +228,19 @@ function main()
 	experiment[:max_iter] = 1000
 	experiment[:σ] = [2,6,20]
 
-	data = Embeddings.load_data(path=args["data"])
+	data = TripletEmbeddings.load_data(args["data"])
 
 	#Random.seed!(4)
-	#tSTE(args, data, experiment)
+	# tSTE(args, data, experiment)
+
+	Random.seed!(4)
+	STE(args, data, experiment)
 
 	#Random.seed!(4)
-	#STE(args, data, experiment)
+	# GNMDS(args, data, experiment)
 
 	#Random.seed!(4)
-	#GNMDS(args, data, experiment)
-
-	#Random.seed!(4)
-	#CKL(args, data, experiment)
+	# CKL(args, data, experiment)
 
 
 end
