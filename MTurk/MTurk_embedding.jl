@@ -1,10 +1,11 @@
-include("../TripletEmbeddings.jl/src/Embeddings.jl")
 include("MTurk.jl")
+using .MTurk
+using TripletEmbeddings
 
 using MAT
 using CSV
 using Glob
-using Plots; gr()
+using Plots
 using Printf
 using Statistics
 
@@ -28,13 +29,13 @@ params[:μ] = 20
 
 # Compute the embedding with the triplets generated in MTurk
 no_triplets = floor(Int64, size(triplets,1)/2)
-te = Embeddings.STE(triplets[1:no_triplets,:], dimensions, params)
-@time violations = Embeddings.compute(te; max_iter=1000)
+te = TripletEmbeddings.STE(triplets[1:no_triplets,:], dimensions, params)
+@time violations = TripletEmbeddings.fit!(te; max_iter=1000)
 
 # Load the data and scale to compute the error (MSE) and correlation between signals
 # We compute the correlation because it is scale-free
-data = Embeddings.load_data(path=string("../data/", task, ".csv"))
-te.X.X[:,1], mse = Embeddings.scale(data, dropdims(Embeddings.X(te), dims=2), MSE=true)
+data = TripletEmbeddings.load_data(string("../data/", task, ".csv"))
+te.X.X[:,1], mse = TripletEmbeddings.scale(data, dropdims(TripletEmbeddings.X(te), dims=2), MSE=true)
 ρ = cor(dropdims(te.X.X, dims=2), data)
 
 println("Nº triplets = $no_triplets")

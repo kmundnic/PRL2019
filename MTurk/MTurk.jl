@@ -1,12 +1,11 @@
 module MTurk
 
-	include("../TripletEmbeddings.jl/src/Embeddings.jl")
-
 	using Random
 	using Statistics
 	using DataFrames
 	using LinearAlgebra
 	using Interpolations
+	using TripletEmbeddings
 
 	function hits_per_worker(workers::Array{String,1})
 	
@@ -230,7 +229,7 @@ module MTurk
 
 	end
 
-	function shift(te::Main.Embeddings.TripletEmbedding, data::Vector{Float64}; seconds::Float64=-0.5)
+	function shift(te::TripletEmbeddings.Embedding, data::Vector{Float64}; seconds::Float64=-0.5)
 		
 		xs = 1:size(te.X.X, 1)
 		A = [te.X.X[x] for x in xs]

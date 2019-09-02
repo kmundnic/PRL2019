@@ -1,10 +1,11 @@
-include("../TripletEmbeddings.jl/src/Embeddings.jl")
 include("MTurk.jl")
+using .MTurk
+using TripletEmbeddings
 
 using MAT
 using CSV
 using Glob
-using Plots; gr()
+using Plots
 using Random
 using Statistics
 using DataFrames
@@ -13,9 +14,9 @@ using LinearAlgebra
 
 task = "TaskA"
 file = string("../data/", task, ".csv")
-data = Embeddings.load_data(path=file)
+data = TripletEmbeddings.load_data(file)
 
-path = string("/Users/karel/Documents/Research/PRL2019/green_experiment/eval_dep/", task)
+path = string(expanduser("~/Documents/Research/PRL2019/green_experiment/eval_dep/"), task)
 if task == "TaskA"
 	evaldep = CSV.read(string(path, "/eval_dep_ground_truth_1hz.csv"), allowmissing=:none)
 elseif task == "TaskB"
@@ -28,9 +29,15 @@ plot(data)
 @df evaldep plot!(:Time_sec, :Data)
 
 if task == "TaskA"
-	evaldep[:Data], mse = Embeddings.scale(data[1:end-3], evaldep[:Data], MSE=true)
+	evaldep[:Data], mse = TripletEmbeddings.scale(
+		data[1:end-3],
+		convert(Vector, evaldep[!,:Data]),
+		MSE=true)
 elseif task == "TaskB"
-	evaldep[:Data], mse = Embeddings.scale(data, evaldep[:Data], MSE=true)
+	evaldep[:Data], mse = TripletEmbeddings.scale(
+		data,
+		convert(Vector, evaldep[!,:Data]),
+		MSE=true)
 end
 
 @df evaldep plot!(:Time_sec, :Data)
