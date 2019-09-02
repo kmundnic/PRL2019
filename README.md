@@ -1,2 +1,2 @@
 # PRL2019
-Code for paper to be submitted to Pattern Recognition Letters
+Code for paper submitted to Pattern Recognition Letters
